@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { GraduationCap, Eye, EyeOff } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { useEffect } from "react";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -16,32 +17,33 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { signIn, user, profile } = useAuth();
+
+  useEffect(() => {
+    if (user && profile) {
+      // Redirect based on user role
+      if (profile.role === 'student') {
+        navigate('/student-dashboard');
+      } else if (profile.role === 'instructor') {
+        navigate('/instructor-dashboard');
+      } else if (profile.role === 'admin') {
+        navigate('/admin-dashboard');
+      }
+    }
+  }, [user, profile, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
 
-    try {
-      // TODO: Implement Supabase authentication
-      console.log("Login attempt:", { email, password });
-      
-      // Mock successful login
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      toast({
-        title: "Login successful!",
-        description: "Welcome back to LearnHub",
-      });
-      
-      // Redirect based on user role (mock)
-      navigate("/student-dashboard");
-    } catch (err) {
+    const { error } = await signIn(email, password);
+    
+    if (error) {
       setError("Invalid email or password. Please try again.");
-    } finally {
-      setIsLoading(false);
     }
+    
+    setIsLoading(false);
   };
 
   return (

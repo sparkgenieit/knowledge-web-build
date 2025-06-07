@@ -8,7 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { GraduationCap, Eye, EyeOff } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { useEffect } from "react";
 
 const Signup = () => {
   const [formData, setFormData] = useState({
@@ -23,7 +24,20 @@ const Signup = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { signUp, user, profile } = useAuth();
+
+  useEffect(() => {
+    if (user && profile) {
+      // Redirect based on user role
+      if (profile.role === 'student') {
+        navigate('/student-dashboard');
+      } else if (profile.role === 'instructor') {
+        navigate('/instructor-dashboard');
+      } else if (profile.role === 'admin') {
+        navigate('/admin-dashboard');
+      }
+    }
+  }, [user, profile, navigate]);
 
   const handleChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -61,29 +75,16 @@ const Signup = () => {
     
     setIsLoading(true);
 
-    try {
-      // TODO: Implement Supabase authentication
-      console.log("Signup attempt:", formData);
-      
-      // Mock successful signup
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      toast({
-        title: "Account created successfully!",
-        description: "Welcome to LearnHub",
-      });
-      
-      // Redirect based on user role
-      if (formData.role === "student") {
-        navigate("/student-dashboard");
-      } else if (formData.role === "instructor") {
-        navigate("/instructor-dashboard");
-      }
-    } catch (err) {
+    const { error } = await signUp(formData.email, formData.password, {
+      full_name: formData.name,
+      role: formData.role
+    });
+    
+    if (error) {
       setError("Failed to create account. Please try again.");
-    } finally {
-      setIsLoading(false);
     }
+    
+    setIsLoading(false);
   };
 
   return (

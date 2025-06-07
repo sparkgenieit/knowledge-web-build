@@ -1,66 +1,31 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
-import Navbar from "@/components/Navbar";
+import AuthNavbar from "@/components/AuthNavbar";
 import CourseCard from "@/components/CourseCard";
 import { Search, PlayCircle, Users, Award, BookOpen } from "lucide-react";
+import { useCourses } from "@/hooks/useCourses";
+import { useAuth } from "@/hooks/useAuth";
 
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const { data: courses, isLoading } = useCourses();
+  const { user } = useAuth();
 
-  // Mock data for featured courses
-  const featuredCourses = [
-    {
-      id: "1",
-      title: "Complete React Development Course",
-      description: "Master React from basics to advanced concepts with hands-on projects",
-      instructor: "John Smith",
-      thumbnail: "/placeholder.svg",
-      category: "Web Development",
-      duration: "12 hours",
-      studentsCount: 2340,
-      rating: 4.8,
-      reviewsCount: 156
-    },
-    {
-      id: "2",
-      title: "Python for Data Science",
-      description: "Learn Python programming and data analysis with real-world projects",
-      instructor: "Sarah Johnson",
-      thumbnail: "/placeholder.svg",
-      category: "Data Science",
-      duration: "15 hours",
-      studentsCount: 1890,
-      rating: 4.7,
-      reviewsCount: 203
-    },
-    {
-      id: "3",
-      title: "UI/UX Design Fundamentals",
-      description: "Master the principles of user interface and user experience design",
-      instructor: "Mike Chen",
-      thumbnail: "/placeholder.svg",
-      category: "Design",
-      duration: "8 hours",
-      studentsCount: 1245,
-      rating: 4.9,
-      reviewsCount: 89
-    }
-  ];
+  // Get featured courses (first 3)
+  const featuredCourses = courses?.slice(0, 3) || [];
 
   const stats = [
     { icon: Users, label: "Students", value: "50,000+" },
-    { icon: BookOpen, label: "Courses", value: "1,200+" },
+    { icon: BookOpen, label: "Courses", value: courses?.length.toString() || "0" },
     { icon: Award, label: "Instructors", value: "500+" },
     { icon: PlayCircle, label: "Hours", value: "10,000+" }
   ];
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar />
+      <AuthNavbar />
       
       {/* Hero Section */}
       <section className="bg-gradient-to-r from-blue-600 to-blue-800 text-white">
@@ -89,18 +54,20 @@ const Index = () => {
               </div>
             </div>
             
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link to="/signup">
-                <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-100">
-                  Get Started
-                </Button>
-              </Link>
-              <Link to="/courses">
-                <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-blue-600">
-                  Browse Courses
-                </Button>
-              </Link>
-            </div>
+            {!user && (
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Link to="/signup">
+                  <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-100">
+                    Get Started
+                  </Button>
+                </Link>
+                <Link to="/courses">
+                  <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-blue-600">
+                    Browse Courses
+                  </Button>
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -132,11 +99,35 @@ const Index = () => {
             </p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {featuredCourses.map((course) => (
-              <CourseCard key={course.id} {...course} />
-            ))}
-          </div>
+          {isLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="animate-pulse">
+                  <div className="bg-gray-200 h-48 rounded-lg mb-4"></div>
+                  <div className="bg-gray-200 h-4 rounded mb-2"></div>
+                  <div className="bg-gray-200 h-3 rounded w-3/4"></div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {featuredCourses.map((course) => (
+                <CourseCard
+                  key={course.id}
+                  id={course.id}
+                  title={course.title}
+                  description={course.description}
+                  instructor={course.instructor}
+                  thumbnail={course.thumbnail_url || "/placeholder.svg"}
+                  category={course.category}
+                  duration={`${course.duration_hours} hours`}
+                  studentsCount={course.studentsCount}
+                  rating={course.rating}
+                  reviewsCount={course.reviewsCount}
+                />
+              ))}
+            </div>
+          )}
           
           <div className="text-center mt-12">
             <Link to="/courses">
@@ -147,19 +138,21 @@ const Index = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 bg-gray-900 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold mb-4">Ready to Start Learning?</h2>
-          <p className="text-xl text-gray-300 mb-8">
-            Join thousands of students already learning on LearnHub
-          </p>
-          <Link to="/signup">
-            <Button size="lg" className="bg-orange-500 hover:bg-orange-600">
-              Sign Up Now
-            </Button>
-          </Link>
-        </div>
-      </section>
+      {!user && (
+        <section className="py-16 bg-gray-900 text-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 className="text-3xl font-bold mb-4">Ready to Start Learning?</h2>
+            <p className="text-xl text-gray-300 mb-8">
+              Join thousands of students already learning on LearnHub
+            </p>
+            <Link to="/signup">
+              <Button size="lg" className="bg-orange-500 hover:bg-orange-600">
+                Sign Up Now
+              </Button>
+            </Link>
+          </div>
+        </section>
+      )}
 
       {/* Footer */}
       <footer className="bg-gray-800 text-white py-12">
